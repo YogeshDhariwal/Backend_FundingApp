@@ -1,0 +1,16 @@
+{
+  "name": "backend_fundingapp",
+  "version": "1.0.0",
+  "description": "backend for a creator funding app",
+  "main": "index.js",
+  "scripts": {
+    "dev": ""
+  },
+  "author": "Yogesh Dhariwal",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "mongoose": "^9.1.6"
+  }
+}
