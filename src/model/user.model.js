@@ -34,12 +34,14 @@ const userSchema =new mongoose.Schema(
         type:String,
         required:true,
         unique:true
+       
      },
      razorPay_Secret:{
         type:String,
         required:true,
+        unique:true
      },
-     refereshToken:{
+     refreshToken:{
       type:String
      }
  
@@ -52,10 +54,10 @@ this.password= await bcrypt.hash(this.password,10)
 })
 
 userSchema.methods.isPasswordCorrect =async function(password){
-   return  await bcrypt.compare(this.password,password);
+   return  await bcrypt.compare(password,this.password);
 }
 
-userSchema.method.generateAccessToken =  function(){
+userSchema.methods.generateAccessToken =  function(){
   return jwt.sign(
    {
     _id:this._id,
@@ -70,7 +72,7 @@ userSchema.method.generateAccessToken =  function(){
 )
 }
 
-userSchema.method.generateRefreshToken =function(){
+userSchema.methods.generateRefreshToken =function(){
    return jwt.sign({
       _id:this._id
    },

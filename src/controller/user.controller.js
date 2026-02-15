@@ -14,7 +14,7 @@ const generateAccessAndRefreshTokens = async(userId)=>{
     user.refreshToken = refreshToken
     await user.save({validateBeforeSave:false})
  
-    return {refreshToken ,accessToken}
+    return {accessToken,refreshToken}
    } catch (error) {
        console.log('something error while generating access and refresh token',error);
    }
@@ -64,10 +64,10 @@ const generateAccessAndRefreshTokens = async(userId)=>{
   razorPay_Id:razorPay_Id,
   razorPay_Secret:razorPay_Secret,
   avatar:avatar.url,
-  coverImage: coverImage?.url || ""
+  coverImage: coverImage?.url || " "
    })
      const createdUser = await User.findById(user._id).select(
-        "--refreshToken --password --razorPay_Id --razoPay_Secret"
+        "-refreshToken -password -razorPay_Id -razorPay_Secret"
      )
      if(!createdUser){
         throw new ApiError(500,"something went wrong while registering user")
@@ -81,8 +81,64 @@ const generateAccessAndRefreshTokens = async(userId)=>{
   })
 
   /** login User */
+  const loginUser = asyncHandler(async(req,res)=>{
+       const {email,userName,password}=req.body
+
+   
+  
+       if(!(email || userName)){
+         throw new ApiError(400,"Email or username is required")
+       }
+       if(!password){
+         throw new ApiError(400,"password is required")
+       }
+         
+       const user = await User.findOne(
+         {
+            $or:[{userName},{email}]
+         }
+       )
+//   console.log('user',user);
+      if(!user){
+         throw new ApiError(404,"Invalid email or username")
+      }
+      
+      
+
+      const correctPassword = await user.isPasswordCorrect(password)
+      if(!correctPassword){
+         throw new ApiError(400,"Incorrect Password")
+      }
+    
+      const {accessToken ,refreshToken } = await generateAccessAndRefreshTokens(user._id)
+     
+
+      const loggedInUser = await User.findById(user._id).select(
+         "-password -refreshToken -razorPay_Id -razorPay_Secret"
+      )
+      console.log('loggedInUser',loggedInUser);
+      const options ={
+    httpOnly:true,
+    secure:true
+      }
+
+      return res
+      .status(200)
+      .cookie("AccessToken",accessToken,options)
+      .cookie("RefreshToken",refreshToken,options)
+      .json(
+         new ApiResponse(200,
+            {user:loggedInUser ,accessToken ,refreshToken},
+            "Logged in successfully"
+
+         )
+      )
+  })
+
+  /** logout */
 
 
   export{
-    registerUser
+    registerUser,
+    loginUser
   }
