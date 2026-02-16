@@ -116,7 +116,7 @@ const generateAccessAndRefreshTokens = async(userId)=>{
       const loggedInUser = await User.findById(user._id).select(
          "-password -refreshToken -razorPay_Id -razorPay_Secret"
       )
-      console.log('loggedInUser',loggedInUser);
+      
       const options ={
     httpOnly:true,
     secure:true
@@ -136,9 +136,34 @@ const generateAccessAndRefreshTokens = async(userId)=>{
   })
 
   /** logout */
+const logOut= asyncHandler(async(req,res)=>{
+     
+   await User.findByIdAndUpdate(
+      req.user._id,
+      {
+         $unset:{refreshToken :1}
+      },
+      {
+         new:true
+      }
+   )
+    
+   const options ={
+      httpOnly:true,
+      secure:true
+   }
 
+   return res
+   .status(200)
+   .clearCookie("AccessToken",options)
+   .clearCookie("RefreshToken",options)
+   .json(
+      new ApiResponse(200,{},"User is Logout successfull")
+   )
+})
 
   export{
     registerUser,
-    loginUser
+    loginUser,
+    logOut
   }
