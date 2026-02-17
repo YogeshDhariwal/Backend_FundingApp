@@ -5,6 +5,7 @@ import {ApiError } from '../utils/ApiError.js'
 import {ApiResponse} from '../utils/ApiResponse.js'
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from 'jsonwebtoken'
+import { encrypt ,decrypt } from "../utils/crypto.js";
 
 const generateAccessAndRefreshTokens = async(userId)=>{
    try {
@@ -27,10 +28,7 @@ const generateAccessAndRefreshTokens = async(userId)=>{
   const registerUser = asyncHandler(async(req,res)=>{
    
    const {email,fullName,userName,password,razorPay_Id,razorPay_Secret} =req.body
-   if([email,userName,fullName,password,razorPay_Id,razorPay_Secret].some((fields)=>{
-        fields?.trim()===""
-   })
-)  {
+   if([email,userName,fullName,password,razorPay_Id,razorPay_Secret].some(field => (field ?? "").toString().trim() === "")){
     throw new ApiError(400,"All fields are required to fill")
    }
   
@@ -41,11 +39,11 @@ const generateAccessAndRefreshTokens = async(userId)=>{
     throw new ApiError(409,"This user is already registered")
    }
      
-    const avatarLocalFilePath = req.files?.avatar[0]?.path
+    const avatarLocalFilePath = req.files?.avatar?.[0]?.path
 
     let coverImageLocalPath;
-    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.path.length >0){
-       coverImageLocalPath=req.files?.coverImage[0]?.path
+    if (req.files?.coverImage?.length > 0) {
+       coverImageLocalPath = req.files.coverImage[0].path
     }
    if(!avatarLocalFilePath){
     throw new ApiError(400,"avatar file is required")
@@ -62,11 +60,12 @@ const generateAccessAndRefreshTokens = async(userId)=>{
     password:password,
     fullName:fullName,
     userName:userName.toLowerCase(),
-  razorPay_Id:razorPay_Id,
-  razorPay_Secret:razorPay_Secret,
+  razorPay_Id:JSON.stringify(encrypt(razorPay_Id,process.env.PAYMENT_MASTER_KEY)),
+  razorPay_Secret:JSON.stringify(encrypt(razorPay_Secret,process.env.PAYMENT_MASTER_KEY)),
   avatar:avatar.url,
   coverImage: coverImage?.url || " "
    })
+   
      const createdUser = await User.findById(user._id).select(
         "-refreshToken -password -razorPay_Id -razorPay_Secret"
      )
@@ -200,9 +199,40 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
 
 })
 
+/** edit user details */
+ const updatUserDetails = asyncHandler(async(req,res)=>{
+      const {fullName,userName,password,razorPay_Id,razorPay_Secret} = req.body
+      if(!fullName && !userName && !password && !razorPay_Id && !razorPay_Secret){
+         throw new ApiError(400,"At least one field is required to update user details")
+      }
+      
+      const updateData = {}
+      if(fullName) updateData.fullName = fullName
+      if(userName) updateData.userName = userName.toLowerCase()
+      if(razorPay_Id) updateData.razorPay_Id = JSON.stringify(encrypt(razorPay_Id,process.env.PAYMENT_MASTER_KEY))
+      if(razorPay_Secret) updateData.razorPay_Secret = JSON.stringify(encrypt(razorPay_Secret,process.env.PAYMENT_MASTER_KEY))
+      
+      const user = await User.findByIdAndUpdate(
+         req.user._id,
+         {
+            $set:updateData
+         },
+         {
+            new:true
+         }
+      ).select("-password -refreshToken -razorPay_Id -razorPay_Secret")
+
+      return res
+      .status(200)
+      .json(
+         new ApiResponse(200,user,"User details updated successfully")
+      )
+ })
+
   export{
     registerUser,
     loginUser,
     logOut,
-    refreshAccessToken
+    refreshAccessToken,
+    updatUserDetails
   }
