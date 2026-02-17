@@ -27,8 +27,8 @@ const generateAccessAndRefreshTokens = async(userId)=>{
 
   const registerUser = asyncHandler(async(req,res)=>{
    
-   const {email,fullName,userName,password,razorPay_Id,razorPay_Secret} =req.body
-   if([email,userName,fullName,password,razorPay_Id,razorPay_Secret].some(field => (field ?? "").toString().trim() === "")){
+   const {email,fullName,userName,password,razorPay_Id,razorPay_Secret,bio} =req.body
+   if([email,userName,fullName,password,razorPay_Id,razorPay_Secret,bio].some(field => (field ?? "").toString().trim() === "")){
     throw new ApiError(400,"All fields are required to fill")
    }
   
@@ -60,6 +60,7 @@ const generateAccessAndRefreshTokens = async(userId)=>{
     password:password,
     fullName:fullName,
     userName:userName.toLowerCase(),
+    bio:bio,
   razorPay_Id:JSON.stringify(encrypt(razorPay_Id,process.env.PAYMENT_MASTER_KEY)),
   razorPay_Secret:JSON.stringify(encrypt(razorPay_Secret,process.env.PAYMENT_MASTER_KEY)),
   avatar:avatar.url,
@@ -227,6 +228,11 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
       .json(
          new ApiResponse(200,user,"User details updated successfully")
       )
+ })
+
+ /** get user details */
+ const getUserDetails = asyncHandler(async(req,res)=>{
+
  })
 
   export{
