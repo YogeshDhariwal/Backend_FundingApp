@@ -6,9 +6,13 @@ const likeSchema=new mongoose.Schema(
         type:mongoose.Schema.Types.ObjectId,
         ref:"Post"
      },
-     atMessage:{
+     atPost:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Post"
+     },
+     atComment:{
+      type:mongoose.Schema.Types.ObjectId,
+      ref:"Comment"
      },
      likedBy:{
         type:mongoose.Schema.Types.ObjectId,

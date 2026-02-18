@@ -202,8 +202,8 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
 
 /** edit user details */
  const updatUserDetails = asyncHandler(async(req,res)=>{
-      const {fullName,userName,password,razorPay_Id,razorPay_Secret} = req.body
-      if(!fullName && !userName && !password && !razorPay_Id && !razorPay_Secret){
+      const {fullName,userName,razorPay_Id,razorPay_Secret,bio} = req.body
+      if(!fullName && !userName  && !razorPay_Id && !razorPay_Secret && !bio){
          throw new ApiError(400,"At least one field is required to update user details")
       }
       
@@ -212,7 +212,7 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
       if(userName) updateData.userName = userName.toLowerCase()
       if(razorPay_Id) updateData.razorPay_Id = JSON.stringify(encrypt(razorPay_Id,process.env.PAYMENT_MASTER_KEY))
       if(razorPay_Secret) updateData.razorPay_Secret = JSON.stringify(encrypt(razorPay_Secret,process.env.PAYMENT_MASTER_KEY))
-      
+      if(bio) updateData.bio =bio
       const user = await User.findByIdAndUpdate(
          req.user._id,
          {
@@ -230,15 +230,192 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
       )
  })
 
+ /** edit avatar */
+ const updateAvatar= asyncHandler(async(req,res)=>{
+      const newAvatarPath =req.file?.path
+      if(!newAvatarPath ){
+         throw new ApiError(400,"Avatar is not found")
+      }
+      
+  const avatar = await uploadOnCloudinary(newAvatarPath)
+  if(!avatar.url){
+   throw new ApiError(400,"ERROR while uploading avatar")
+  }
+      const user = await User.findByIdAndUpdate(
+         req.user._id,
+         {
+            $set:{
+               avatar: avatar.url
+            }
+         },
+         {new:true}
+      ).select("-password -razorPay_Id -razorPay_Secret -refreshToken")
+
+      return res
+      .status(200)
+      .json(
+         new ApiResponse(200,user,"Avatar is updated successfully")
+      )
+ })
+
+ /** edit coverImage */
+ const updateCoverImage = asyncHandler(async(req,res)=>{
+   const newCoverImagePath = req.file?.path
+   if(!newCoverImagePath){
+      throw new ApiError(400,"Cover Image not found")
+   }
+
+   const coverImage = await  uploadOnCloudinary(newCoverImagePath)
+   if(!coverImage.url){
+      throw new ApiError(400,"ERROR while uploading coverImage")
+   }
+
+   const user = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+         $set:{
+            coverImage:coverImage.url
+         }
+      },
+      {
+         new:true
+      }
+   ).select("-password -razorPay_Id -razorPay_Secret -refreshToken")
+
+   return res
+   .status(200)
+   .json(
+      new ApiResponse(200,user,"CoverImage is updated successfully")
+   )
+ })
+
+ /** updated password */
+ const updatePassword = asyncHandler(async(req,res)=>{
+     const {oldPassword , newPassword} = req.body
+      if(!oldPassword && ! newPassword){
+         throw new ApiError(400,"Both oldPassword and newPassword is required")
+      }
+
+    const user = await User.findById(req.user?._id)
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid Password")
+    }
+
+    user.password = newPassword
+    user.save({ validateBeforeSave: false })
+
+      return res
+      .status(200)
+      .json(
+         new ApiResponse(200,user,"password is updated is successfully")
+      )
+ })
  /** get user details */
  const getUserDetails = asyncHandler(async(req,res)=>{
+      const {userName} = req.params
 
+      if(!userName?.trim()){
+         throw new ApiError(400,"User name is required")
+      }
+    
+      const user = await User.aggregate([
+         {
+            $match:{
+            userName : userName
+         }
+      },
+      {
+         $lookup:{
+            from :"subscriptions",
+            localField:"_id",
+            foreignField:"channel",
+            as :"totalSubscriber",
+         }
+      },
+      {
+         $lookup:{
+            from :"subscriptions",
+            localField:"_id",
+            foreignField:"subscribedByYou",
+            as:"sunscribedByYou",
+         }
+      },
+
+      {
+         $lookup:{
+            from:"earnings",
+            localField:"_id",
+            foreignField:"earningFromSubscriber",
+             as:"totalEarningsfromSubscriber",
+            
+         }
+      },
+
+      {
+         $lookup:{
+            from :"memberships",
+            localField:"_id",
+            foreignField:"owner",
+            as:"membershipDetails",
+         }
+      },
+
+      {
+         $addFields:{
+            SubsriberCount:{
+               $size: "$totalSubscriber"
+            },
+            subsribedCount:{
+               $size:"$sunscribedByYou"
+            },
+             isSubscribed:{
+                    $cond: {
+                        if:{$in: [req.user?._id,{
+                $map: {
+                  input: "$totalSubscriber",
+                  as: "sub",
+                  in: "$$sub.subscriber"
+                }
+              }]},
+                        then:true,
+                        else:false
+                    }
+                },
+            moneyFromSubscriber:{
+               $sum:"$totalEarningsfromSubscriber.moneyDonated"
+            },
+            membershipDetail:{ 
+                  $arrayElemAt:["$membershipDetails",0]    
+            }
+         }
+      }
+
+      ])
+
+ if(!user?.length){
+   throw new ApiError(400,"no such user is exists")
+ }
+
+     return res
+     .status(200)
+     .json(
+      new ApiResponse(200,user[0],"User details fetched successfully")
+     )
+     
  })
+
+
 
   export{
     registerUser,
     loginUser,
     logOut,
     refreshAccessToken,
-    updatUserDetails
+    updatUserDetails,
+    updateAvatar,
+    updatePassword,
+    updateCoverImage,
+    getUserDetails
   }

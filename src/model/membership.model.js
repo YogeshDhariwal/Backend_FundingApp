@@ -5,13 +5,26 @@ const memberShipSchema = new mongoose.Schema(
     pro:{
         type:String,
     },
+    proPrice:{
+        type:Number,
+        default:50
+    },
     basic:{
         type:String
     },
+    basicPrice:{
+        type:Number,
+        default:30
+    },
+
     premium:{
         type:String,
     },
-    owner:{
+    premiumPrice:{
+           type:Number,
+           default:100
+    },
+    owner:{ 
         type:mongoose.Schema.Types.ObjectId,
         ref:"User"
     },
