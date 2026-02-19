@@ -29,8 +29,4 @@ router.route('/updateCoverImage').patch(verifyJwt,upload.single("coverImage"),up
 router.route('/updatePassword').patch(verifyJwt,updatePassword)
 router.route('/getUserDetails/:userName').get(verifyJwt,getUserDetails)
 
-
-
-
-
 export default router

@@ -2,24 +2,22 @@ import mongoose from 'mongoose'
 
 const memberShipSchema = new mongoose.Schema(
     {
-    pro:{
-        type:String,
+     planTypes :{
+            type:String,
+            enum:["Basic", "Pro" ,"Premium"],
+            required:true
     },
     proPrice:{
         type:Number,
         default:50
     },
-    basic:{
-        type:String
-    },
+   
     basicPrice:{
         type:Number,
         default:30
     },
 
-    premium:{
-        type:String,
-    },
+  
     premiumPrice:{
            type:Number,
            default:100
@@ -30,11 +28,12 @@ const memberShipSchema = new mongoose.Schema(
     },
     benifts:[{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"Video"
-    }],
+        ref:"Post"
+    },
+],
     validTime:{
         type:Number,
-        default:"365 DAYS"
+        default:365
     }
 
 },{timestamps:true})

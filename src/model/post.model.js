@@ -5,9 +5,17 @@ const postSchema = new mongoose.Schema(
    video:{
     type:String
    },
+   description:{
+    type:String
+   },
+   isPublished:{
+    type: Boolean,
+    default:true
+
+   },
    message:{
     type:String,
-    required:true
+
    },
    owner:{
     type:mongoose.Schema.Types.ObjectId,
