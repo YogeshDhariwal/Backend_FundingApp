@@ -1,32 +1,20 @@
 import mongoose from 'mongoose'
 
-const memberShipSchema = new mongoose.Schema(
+const membershipSchema = new mongoose.Schema(
     {
-     planTypes :{
+     planType :{
             type:String,
             enum:["Basic", "Pro" ,"Premium"],
             required:true
     },
-    proPrice:{
-        type:Number,
-        default:50
-    },
-   
-    basicPrice:{
-        type:Number,
-        default:30
-    },
-
-  
-    premiumPrice:{
-           type:Number,
-           default:100
+    price:{
+    type:Number
     },
     owner:{ 
         type:mongoose.Schema.Types.ObjectId,
         ref:"User"
     },
-    benifts:[{
+    benefits:[{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Post"
     },
@@ -38,4 +26,15 @@ const memberShipSchema = new mongoose.Schema(
 
 },{timestamps:true})
 
-export const Membership =mongoose.model("Membership",memberShipSchema)
+membershipSchema.pre("save", function () {
+  if (this.planType === "Basic") {
+    this.price = 30;
+  } else if (this.planType === "Pro") {
+    this.price = 50;
+  } else if (this.planType === "Premium") {
+    this.price = 100;
+  }
+
+});
+
+export const Membership =mongoose.model("Membership",membershipSchema)

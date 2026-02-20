@@ -5,18 +5,20 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Membership } from "../model/membership.model.js";
 import { Post } from "../model/post.model.js";
 
-/** get basic subsciption */
-const getBasicSubscription = asyncHandler(async(req,res)=>{
-    const {subscriptionType} =req.body
 
-     if(!subscriptionType){
+/** get basic,pro,premium subsciption */
+const getSubscription = asyncHandler(async(req,res)=>{
+    const {planType} =req.body
+
+     if(!planType){
         throw new ApiError(400,"Choose a plan")
      }
-      const post = await Post.findOne({isPublished:true})
+      const post = await Post.find({accessLevel:String(planType)}).select("_id")
      const userPlan = await Membership.create(
-          {  planTypes:subscriptionType,
+          { 
+             planType:planType,
             owner:req.user._id,
-            benifts: [post._id]
+            benefits: post.map(p=>p._id)
             
         }
      )
@@ -28,11 +30,21 @@ const getBasicSubscription = asyncHandler(async(req,res)=>{
      return res
      .status(200)
      .json(
-        new ApiResponse(201,userPlan,"Your Basic plan is successfully activated")
+        new ApiResponse(201,userPlan,`Your ${planType} is succesfull activated`)
      )
 })
 
+/** upgrading plan */ 
+const upgradePlan =asyncHandler(async(req,res)=>{
+
+   const {newPlan} = req.body
+   if(!newPlan){
+      throw new ApiError(400,"please select a plan")
+   }
+  /**  update price and benifts which is for that plan */
+}) 
 
 export {  
-    getBasicSubscription
+    getSubscription,
+
 }
