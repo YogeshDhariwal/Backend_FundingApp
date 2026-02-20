@@ -8,21 +8,23 @@
  /** post video */
  const postVideo = asyncHandler(async(req,res)=>{
 
-    const  {description} =req.body
+    const  {videoTitle,description,accessLevel} =req.body
 
-    if( ! description){
-        throw new ApiError(400,"please upload video and its description")
+    if( ! description || !videoTitle || !accessLevel){
+        throw new ApiError(400,"please upload video Title , description ,accessLevel")
     }
 
-    const videoFilePath =   req.files?.video[0]?.path
-    
+    const videoFilePath =   req.files?.videoFile[0]?.path
     const video = await uploadOnCloudinary(videoFilePath)
+  
     if(!video.url){
         throw new ApiError(500,"error while uploading video ")
     }
      const post = await Post.create({
-        video : video.url,
+        videoFile : video.url,
          description:description,
+         accessLevel:String(accessLevel),
+         videoTitle:videoTitle,
         owner:req.user._id
      })
     return res

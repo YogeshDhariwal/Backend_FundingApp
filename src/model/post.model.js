@@ -2,16 +2,22 @@ import  mongoose from 'mongoose'
 
 const postSchema = new mongoose.Schema(
     {
-   video:{
-    type:String
+   videoFile:{
+    type:String,
+    
+   },
+   videoTitle:{
+      type:String,
+     
    },
    description:{
     type:String
    },
-   isPublished:{
-    type: Boolean,
-    default:true
-
+      
+   accessLevel:{
+     type:String,
+     enum:["Public","Pro","Basic","Premium"],
+     default:"Public"
    },
    message:{
     type:String,

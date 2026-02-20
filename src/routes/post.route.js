@@ -9,7 +9,7 @@ router.use(verifyJwt)
 
 router.route('/postVideo').post(upload.fields([
   {
-    name:"video"
+    name:"videoFile"
   }
 ]),postVideo)
 
