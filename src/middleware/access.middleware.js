@@ -1,4 +1,6 @@
-import { ACCESS_RANK } from "../utils/access.util.js";
+
+import { ACCESS_RANK } from "../utils/access.js";
+import { ApiError } from "../utils/ApiError.js";
 
 export const canAccess = (requiredLevel) => {
   return (req, res, next) => {

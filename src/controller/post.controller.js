@@ -3,9 +3,10 @@
  import { ApiResponse } from "../utils/ApiResponse.js";
  import { Post } from "../model/post.model.js";
  import mongoose from "mongoose";
- import { getAccessibleLevels } from "../utils/access.util.js";
+ import { getAccessibleLevels } from "../utils/access.js";
  import { uploadOnCloudinary } from "../utils/cloudinary.js";
  import { Membership } from "../model/membership.model.js";
+
 
  /** post video */
  const postVideo = asyncHandler(async(req,res)=>{
@@ -162,9 +163,13 @@ const skip = (pageNumber - 1)*limitNumber
 
 /** get all accessable post */
 
-
 const getAccessiblePosts = asyncHandler(async (req, res) => {
-  const userPlan = req.user?.Membership?.planType || "Public";
+  const membership = await Membership.aggregate([
+    { $match: { owner: req.user._id } },
+    { $project: { _id: 0, planType: 1 } }
+  ]);
+
+  const userPlan = membership[0]?.planType || "Public";
 
   const allowedLevels = getAccessibleLevels(userPlan);
 
