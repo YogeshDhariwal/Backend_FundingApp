@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Membership } from "../model/membership.model.js";
 import { Post } from "../model/post.model.js";
+import { getAccessibleLevels } from "../utils/access.js";
 
 
 /** get basic,pro,premium subsciption */
@@ -13,12 +14,15 @@ const getSubscription = asyncHandler(async(req,res)=>{
      if(!planType){
         throw new ApiError(400,"Choose a plan")
      }
-      const post = await Post.find({accessLevel:String(planType)}).select("_id")
+     const allowedLevels = getAccessibleLevels(planType)
+       const posts = await Post.find({
+          accessLevel: { $in: allowedLevels }
+        }).select("_id")
      const userPlan = await Membership.create(
           { 
              planType:planType,
             owner:req.user._id,
-            benefits: post.map(p=>p._id)
+            benefits: posts.map(p=>p._id)
             
         }
      )

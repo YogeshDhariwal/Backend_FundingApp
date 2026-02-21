@@ -19,6 +19,6 @@ router.route('/postMessage').post(postMessage)
 router.route('/getAllPosts').get(getAllPosts)
 router.route('/deletePostedVideo/:postVideoId').delete(deletePostedVideo)
 router.route('/deletePostedMessage/:postedMessageId').delete(deletePostedMessage)
-router.route('/getAllAccessablPost').get(getAccessiblePosts)
+router.route('/getAllAccessablPost').get(canAccess("Pro"),getAccessiblePosts)
 
   export default router

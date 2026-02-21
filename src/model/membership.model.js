@@ -10,6 +10,10 @@ const membershipSchema = new mongoose.Schema(
     price:{
     type:Number
     },
+    status:{
+      type:String,
+      enum:["Active","Expired"]
+    },
     owner:{ 
         type:mongoose.Schema.Types.ObjectId,
         ref:"User",
