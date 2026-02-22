@@ -48,7 +48,36 @@ const createOrder = asyncHandler(async(req,res)=>{
 })
 
 /** verify payment */
+const verifyPayment = asyncHandler(async(req,res)=>{
+    const  {
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+    } =req.body
+
+    if(!razorpay_order_id || ! razorpay_payment_id  || !razorpay_signature){
+        throw new ApiError(400,"Payment data is missing")
+    }
+    const body =razorpay_order_id + "|" + razorpay_payment_id;
+
+    const expectedSignature = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(body)
+    .digest("hex")
+    if(expectedSignature !== razorpay_signature){
+        throw new ApiError(400,"Payment verification failed")
+    }
+
+
+    await Payment.findOneAndUpdate(
+    { order_id:razorpay_order_id},
+      {
+  status: "Success",
+  currency: "INR"
+})
+})
 
 export {
-    createOrder
+    createOrder,
+    verifyPayment
 }

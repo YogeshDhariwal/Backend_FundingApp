@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Razorpay</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+  <button onclick="pay()">Pay</button>
+
+  <script>
+    function pay() {
+      const options = {
+        key: process.env.RAZORPAY_KEY_ID, // test key
+        amount: 50000,
+        currency: "INR",
+        order_id: "ORDER_ID_FROM_BACKEND",
+
+        handler: function (response) {
+          console.log("SEND THIS TO BACKEND:", response);
+
+          fetch("http://localhost:5000/api/payment/verify", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer YOUR_JWT"
+            },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            })
+          });
+        }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.open();
+    }
+  </script>
+</body>
+</html>
