@@ -5,7 +5,7 @@ const router = Router()
 router.use(verifyJwt)
 
 router.route('/createOrder').post(createOrder)
-router.route('/verifyPayment').patch(verifyPayment)
+router.route('/verifyPayment').post(verifyPayment)
 
 
 export default router

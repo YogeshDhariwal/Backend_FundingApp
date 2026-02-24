@@ -7,48 +7,86 @@ import { Post } from "../model/post.model.js";
 import { getAccessibleLevels } from "../utils/access.js";
 
 
-/** get basic,pro,premium subsciption */
-const getSubscription = asyncHandler(async(req,res)=>{
-    const {planType} =req.body
+/** get membership details for current user */
+const getMembership = asyncHandler(async(req,res)=>{
+    const membership = await Membership.findOne({ owner: req.user._id })
+    
+    if(!membership){
+        throw new ApiError(404,"No active membership found")
+    }
 
-     if(!planType){
-        throw new ApiError(400,"Choose a plan")
-     }
-     const allowedLevels = getAccessibleLevels(planType)
-       const posts = await Post.find({
-          accessLevel: { $in: allowedLevels }
-        }).select("_id")
-     const userPlan = await Membership.create(
-          { 
-             planType:planType,
-            owner:req.user._id,
-            benefits: posts.map(p=>p._id)
-            
-        }
-     )
-
-     if(!userPlan){
-        throw new ApiError(500,"Error while creating a plan")
-     }
-
-     return res
+    return res
      .status(200)
      .json(
-        new ApiResponse(201,userPlan,`Your ${planType} is succesfull activated`)
+        new ApiResponse(200, membership, "Membership details retrieved")
      )
 })
 
 /** upgrading plan */ 
-const upgradePlan =asyncHandler(async(req,res)=>{
-
-   const {newPlan} = req.body
+const upgradePlan = asyncHandler(async(req,res)=>{
+   const { newPlan } = req.body
    if(!newPlan){
       throw new ApiError(400,"please select a plan")
    }
-  /**  update price and benifts which is for that plan */
-}) 
+
+   const membership = await Membership.findOne({ owner: req.user._id })
+   
+   if(!membership){
+      throw new ApiError(404,"No membership found. Please purchase a plan first")
+   }
+
+   // Check if upgrading to same or lower plan
+   const planRanks = { "Basic": 1, "Pro": 2, "Premium": 3 }
+   if(planRanks[newPlan] <= planRanks[membership.planType]){
+      throw new ApiError(400,"Can only upgrade to a higher plan")
+   }
+
+   const allowedLevels = getAccessibleLevels(newPlan)
+   const posts = await Post.find({
+      accessLevel: { $in: allowedLevels }
+   }).select("_id")
+
+   const updatedMembership = await Membership.findOneAndUpdate(
+      { owner: req.user._id },
+      {
+         planType: newPlan,
+         benefits: posts.map(p => p._id)
+      },
+      { new: true }
+   )
+
+   if(!updatedMembership){
+      throw new ApiError(500,"Error while upgrading plan")
+   }
+
+   return res
+     .status(200)
+     .json(
+        new ApiResponse(200, updatedMembership, `Plan upgraded to ${newPlan}`)
+     )
+})
+
+/** deactivate/cancel membership */
+const cancelMembership = asyncHandler(async(req,res)=>{
+   const membership = await Membership.findOneAndUpdate(
+      { owner: req.user._id },
+      { status: "Expired" },
+      { new: true }
+   )
+
+   if(!membership){
+      throw new ApiError(404,"No membership found")
+   }
+
+   return res
+     .status(200)
+     .json(
+        new ApiResponse(200, membership, "Membership cancelled successfully")
+     )
+})
 
 export {  
-    getSubscription,
-
+    getMembership,
+    upgradePlan,
+    cancelMembership
 }

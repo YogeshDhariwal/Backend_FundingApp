@@ -2,7 +2,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Payment } from "../model/payment.model.js";
+import { Membership } from "../model/membership.model.js";
+import { Post } from "../model/post.model.js";
 import { razorpayInstance } from "../utils/razorpay.js";
+import { getAccessibleLevels } from "../utils/access.js";
 import crypto from "crypto"
 
 /** creating order */
@@ -22,8 +25,10 @@ const createOrder = asyncHandler(async(req,res)=>{
       if(!amount){
         throw new ApiError(400,"Invalid plan")
       }
+      // Razorpay expects amount in paise
+      const amountInPaise = amount * 100;
       const order = await razorpayInstance.orders.create({
-        amount,
+        amount: amountInPaise,
         currency:"INR",
         receipt: crypto.randomBytes(10).toString("hex")
       })
@@ -38,11 +43,9 @@ const createOrder = asyncHandler(async(req,res)=>{
         orderId:order.id,
         status :"Pending"
       })
-   
-      return res
-      .status(200)
-      .json(
-        new ApiResponse(201,[payment,order],"Order is created successfully")
+      // Return the order details and the public key for frontend Razorpay initialization
+      return res.status(201).json(
+        new ApiResponse(201, { payment, order, key: process.env.RAZORPAY_KEY_ID }, "Order is created successfully")
       )
       
 })
@@ -59,7 +62,7 @@ const verifyPayment = asyncHandler(async(req,res)=>{
         throw new ApiError(400,"Payment data is missing")
     }
     const body =razorpay_order_id + "|" + razorpay_payment_id;
-
+    console.log('expected signature',body);
     const expectedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
     .update(body)
@@ -67,15 +70,49 @@ const verifyPayment = asyncHandler(async(req,res)=>{
     if(expectedSignature !== razorpay_signature){
         throw new ApiError(400,"Payment verification failed")
     }
-
-
-    await Payment.findOneAndUpdate(
-    { order_id:razorpay_order_id},
+    
+    // Find the payment by the orderId field and mark it as Success
+    const payment = await Payment.findOneAndUpdate(
+      { orderId: razorpay_order_id },
       {
-  status: "Success",
-  currency: "INR"
+        status: "Success",
+        currency: "INR",
+        paymentId: razorpay_payment_id,
+      },
+      { new: true }
+    )
+
+    if(!payment){
+      throw new ApiError(404,"Payment record not found for this order")
+    }
+
+    // Grant membership after successful payment verification
+    const allowedLevels = getAccessibleLevels(payment.planType)
+    const posts = await Post.find({
+      accessLevel: { $in: allowedLevels }
+    }).select("_id")
+
+    const membership = await Membership.findOneAndUpdate(
+      { owner: payment.sender },
+      {
+        planType: payment.planType,
+        price: payment.amount,
+        status: "Active",
+        benefits: posts.map(p => p._id),
+        validTime: 365
+      },
+      { new: true, upsert: true }
+    )
+
+    if(!membership){
+      throw new ApiError(500,"Error while granting membership")
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, { payment, membership }, "Payment verified successfully and membership granted")
+    )
 })
-})
+  
 
 export {
     createOrder,
