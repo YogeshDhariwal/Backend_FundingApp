@@ -28,7 +28,6 @@ const upgradePlan = asyncHandler(async(req,res)=>{
    if(!newPlan){
       throw new ApiError(400,"please select a plan")
    }
-
    const membership = await Membership.findOne({ owner: req.user._id })
    
    if(!membership){
