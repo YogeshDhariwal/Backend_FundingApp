@@ -333,7 +333,7 @@ const getUserDetails = asyncHandler(async (req, res) => {
       },
       {
          $lookup: {
-            from: "subscriptions",
+            from: "subscribers",
             localField: "_id",
             foreignField: "subscribedByYou",
             as: "sunscribedByYou",

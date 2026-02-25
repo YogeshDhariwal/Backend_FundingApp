@@ -6,11 +6,11 @@ const subscriberSchema = new mongoose.Schema(
         type:mongoose.Schema.Types.ObjectId,
         ref:"User"
       },
-    SubscribedByYou :{
+    subscribedByYou :{
     type:mongoose.Schema.Types.ObjectId,
     ref:"User"
     }
 
     },{timestamps:true})
 
-export const Subscription = mongoose.model("Subscription",subscriberSchema)
+export const Subscriber = mongoose.model("Subscriber",subscriberSchema)
