@@ -51,6 +51,21 @@ const commentOnPost = asyncHandler(async(req,res)=>{
 
 })
 
+ const deleteComment = asyncHandler(async(req,res)=>{
+     const {commentId}=req.params
+       if(!(mongoose.Types.ObjectId.isValid(commentId))){
+        throw new ApiError(400,"Invalid Id")
+       }
+       const comment = await Comment.findOne({_id:commentId})
+       await comment.deleteOne()
+
+       return res
+       .status(200)
+       .json(
+        new ApiResponse(200,{},"Comment is deleted successfully")
+       )
+ })
+
 const getCommentPost = asyncHandler(async(req,res)=>{
     const {userId}=req.params
     const comments = await Comment.aggregate([
@@ -109,6 +124,7 @@ const getCommentPost = asyncHandler(async(req,res)=>{
 })
 export {
     commentOnPost,
-    getCommentPost
+    getCommentPost,
+    deleteComment
 }
 
