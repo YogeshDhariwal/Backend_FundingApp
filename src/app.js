@@ -20,12 +20,14 @@ import subscriptionRoutes from './routes/membership.route.js'
 import postRouter from './routes/post.route.js'
 import paymentRouter from './routes/payment.route.js'
 import commentRouter from './routes/comment.route.js'
+import likeRouter from './routes/like.route.js'
 
 app.use("/api/v1/users",userRoutes)
 app.use("/api/v1/memberships",subscriptionRoutes)
 app.use('/api/v1/posts',postRouter)
 app.use('/api/v1/payments',paymentRouter)
 app.use('/api/v1/comments',commentRouter)
+app.use('/api/v1/likes',likeRouter)
 
 
 

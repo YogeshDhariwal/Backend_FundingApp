@@ -2,11 +2,7 @@ import mongoose from 'mongoose'
 
 const likeSchema=new mongoose.Schema(
     {
-     atVideo:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"Post"
-     },
-     atPost:{
+     likedAt:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Post"
      },

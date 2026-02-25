@@ -1,4 +1,4 @@
-import Router from 'express'
+import {Router} from 'express'
 import { verifyJwt } from '../middleware/auth.middleware.js'
 import { commentOnPost, deleteComment, getCommentPost } from '../controller/comment.controller.js'
 const router =Router()
